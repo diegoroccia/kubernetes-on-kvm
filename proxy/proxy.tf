@@ -6,8 +6,7 @@ resource "libvirt_volume" "proxy" {
 }
 
 data "template_file" "user_data_proxy" { 
-  template = templatefile("${path.module}/cloud_init_proxy.cfg", { "port" = 6443, "masters" = libvirt_domain.master.*.network_interface.0.addresses.0 })
-  depends_on = [libvirt_domain.master]
+  template = templatefile("${path.module}/cloud_init_proxy.cfg", { "port" = 6443, "masters" = [module.master.ip] })
 }
 
 resource "libvirt_cloudinit_disk" "proxyinit" {

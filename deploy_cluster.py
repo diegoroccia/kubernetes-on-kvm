@@ -11,17 +11,18 @@ master = data["master_ip"]["value"]
 print("Initializing cluster on first node ({})".format(master))
 
 with Connection(master) as c:
-    #r = c.sudo("kubeadm init --control-plane-endpoint {proxy_ip[value]}:6443 --pod-network-cidr=10.244.0.0/16 --upload-certs".format(**data)).stdout.split("\n")
-    r = c.sudo("kubeadm init --pod-network-cidr=10.244.0.0/16".format(**data)).stdout.split("\n")
-    #m = r.index("You can now join any number of the control-plane node running the following command on each as root:")+2
-    w = r.index("Then you can join any number of worker nodes by running the following on each as root:")+2
-    #master_join_command = ''.join(r[m:m+2])
-    worker_join_command = ''.join(r[w:w+2])
+    ##r = c.sudo("kubeadm init --control-plane-endpoint {proxy_ip[value]}:6443 --pod-network-cidr=10.244.0.0/16 --upload-certs".format(**data)).stdout.split("\n")
+    c.sudo("kubeadm init --pod-network-cidr=10.244.0.0/16".format(**data), hide=True)
     c.sudo('chmod a+r /etc/kubernetes/admin.conf')
     c.get('/etc/kubernetes/admin.conf')
     print('if you want to use kubectl locally, run\n    export KUBECONFIG=$(pwd)/admin.conf')
+    c.put('manifests/calico.yaml','/tmp')
+    c.run("KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f /tmp/calico.yaml")
+    worker_join_command = c.sudo("kubeadm token create --print-join-command", hide=True).stdout
+    print('Waiting 20 seconds')
 
 sleep(20)
 
+print("Joining Workers")
 with Connection(data["worker_ip"]["value"]) as c:
     c.sudo(worker_join_command)
