@@ -1,1 +1,0 @@
-terraform show -json | jq -r '.values.root_module.resources[] | select( .type == "libvirt_domain") | [ ([.name,.index] | join("-")), .values.network_interface[0].addresses[0]] | @tsv' | sort
